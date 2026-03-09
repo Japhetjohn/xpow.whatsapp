@@ -8,7 +8,7 @@ const { client, whatsappNumber } = require('../config/twilio');
  * @returns {Promise<object>} - Twilio message response.
  */
 const sendNotification = async (phone, message, link) => {
-    const formattedMessage = `🚀 XPOW Notification\n\n${message}\n\nOpen App:\n${link}`;
+    const formattedMessage = `${message}\n\nOpen App:\n${link}`;
 
     try {
         const response = await client.messages.create({
