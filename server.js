@@ -1,36 +1,51 @@
+require('dotenv').config();
+
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
-require('dotenv').config();
 
+// ─── Startup Guard ────────────────────────────────────────────────────────────
+const REQUIRED_ENV = [
+    'TWILIO_ACCOUNT_SID',
+    'TWILIO_AUTH_TOKEN',
+    'TWILIO_WHATSAPP_NUMBER',
+    'XPOW_SECRET_KEY',
+];
+
+const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missing.length > 0) {
+    console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+    console.error('   Copy .env.example → .env and fill in your values.');
+    process.exit(1);
+}
+
+// ─── App Setup ────────────────────────────────────────────────────────────────
 const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(helmet());
 app.use(cors());
-app.use(morgan('combined'));
+app.use(morgan('dev'));
 app.use(express.json());
 
-// Routes
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use(notificationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+    res.status(200).json({ status: 'ok', service: 'xpow-whatsapp-bot' });
 });
 
-// Error handling for undefined routes
+// 404 fallback
 app.use((req, res) => {
-    res.status(404).json({
-        status: 'error',
-        message: 'Resource not found',
-    });
+    res.status(404).json({ status: 'error', message: 'Route not found' });
 });
 
+// ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-    console.log(`🚀 XPOW WhatsApp Bot running on port ${PORT}`);
+    console.log(`✅ XPOW WhatsApp Bot is running on port ${PORT}`);
+    console.log(`🔗 Endpoint: POST http://localhost:${PORT}/send-notification`);
 });
