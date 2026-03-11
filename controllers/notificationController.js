@@ -30,15 +30,20 @@ const sendNotificationController = async (req, res) => {
 
     try {
         const result = await sendNotification(phone, message, link);
+
+        // Infobip returns a messageId in the messages array
+        const messageId = result.messages?.[0]?.messageId;
+
         return res.status(200).json({
-            status: 'sent',
-            sid: result.sid,
+            status: 'success',
+            message: 'WhatsApp notification queued',
+            messageId: messageId,
         });
     } catch (error) {
+        console.error('Controller Error:', error);
         return res.status(500).json({
             status: 'error',
-            message: 'Failed to send WhatsApp notification',
-            error: error.message,
+            message: error.message || 'Failed to send WhatsApp notification',
         });
     }
 };

@@ -7,9 +7,9 @@ const morgan = require('morgan');
 
 // ─── Startup Guard ────────────────────────────────────────────────────────────
 const REQUIRED_ENV = [
-    'TWILIO_ACCOUNT_SID',
-    'TWILIO_AUTH_TOKEN',
-    'TWILIO_WHATSAPP_NUMBER',
+    'INFOBIP_API_BASE_URL',
+    'INFOBIP_API_KEY',
+    'INFOBIP_SENDER_NUMBER',
     'XPOW_SECRET_KEY',
 ];
 
