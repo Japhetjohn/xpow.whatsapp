@@ -13,8 +13,10 @@ const sendNotificationController = async (req, res) => {
             .messages({
                 'string.pattern.base': 'Phone number must be in E.164 format (e.g., +2348012345678)',
             }),
-        message: Joi.string().min(1).required(),
-        link: Joi.string().uri().required(),
+        message: Joi.string().min(1).optional(),
+        link: Joi.string().uri().optional(),
+        templateName: Joi.string().optional(),
+        templatePlaceholders: Joi.array().items(Joi.string()).optional(),
     });
 
     const { error, value } = schema.validate(req.body);
@@ -26,12 +28,19 @@ const sendNotificationController = async (req, res) => {
         });
     }
 
-    const { phone, message, link } = value;
+    const { phone, message, link, templateName, templatePlaceholders } = value;
 
     try {
-        const result = await sendNotification(phone, message, link);
+        // We pass arguments as an object to match the new service signature
+        // If templateName is provided, it will use the template flow.
+        // If not, it uses the raw text flow (which we still support for flexibility).
+        const result = await sendNotification({
+            phone,
+            message: message ? `${message}\n\n[Check it out](${link})` : undefined,
+            templateName,
+            templatePlaceholders
+        });
 
-        // Infobip returns a messageId in the messages array
         const messageId = result.messages?.[0]?.messageId;
 
         return res.status(200).json({

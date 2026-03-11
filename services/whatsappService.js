@@ -1,31 +1,49 @@
 /**
- * Sends a WhatsApp notification directly via Infobip REST API.
- * @param {string} phone - Recipient's phone number (e.g., +234...)
- * @param {string} message - Notification message.
- * @param {string} link - Redirect link.
- * @returns {Promise<object>} - Infobip message response.
+ * Sends a WhatsApp notification via Infobip.
+ * Supports both raw text and predefined templates.
+ * 
+ * @param {object} params - Notification parameters.
+ * @param {string} params.phone - Recipient phone (e.g., +234...)
+ * @param {string} [params.message] - Raw text message.
+ * @param {string} [params.templateName] - Name of the WhatsApp template.
+ * @param {Array} [params.templatePlaceholders] - Values for {{1}}, {{2}}, etc.
+ * @returns {Promise<object>} - Infobip response.
  */
-const sendNotification = async (phone, message, link) => {
-    // Infobip prefers numbers without the '+' for some reason.
-    // We'll strip the '+' and 'whatsapp:' prefix to be safe.
+const sendNotification = async ({ phone, message, templateName, templatePlaceholders = [] }) => {
     const cleanPhone = phone.replace('+', '').replace('whatsapp:', '');
-
-    // Format the message with the markdown link
-    const formattedMessage = `${message}\n\n[Check it out](${link})`;
-
     const apiBaseUrl = process.env.INFOBIP_API_BASE_URL;
     const apiKey = process.env.INFOBIP_API_KEY;
-    const senderNumber = process.env.INFOBIP_SENDER_NUMBER || '447860099299';
+    const senderNumber = process.env.INFOBIP_SENDER_NUMBER;
 
-    const url = `https://${apiBaseUrl}/whatsapp/1/message/text`;
+    let url, payload;
 
-    const payload = {
-        from: senderNumber,
-        to: cleanPhone,
-        content: {
-            text: formattedMessage
-        }
-    };
+    if (templateName) {
+        // Template Message Flow
+        url = `https://${apiBaseUrl}/whatsapp/1/message/template`;
+        payload = {
+            from: senderNumber,
+            to: cleanPhone,
+            content: {
+                templateName: templateName,
+                templateData: {
+                    body: {
+                        placeholders: templatePlaceholders
+                    }
+                },
+                language: 'en'
+            }
+        };
+    } else {
+        // Raw Text Message Flow
+        url = `https://${apiBaseUrl}/whatsapp/1/message/text`;
+        payload = {
+            from: senderNumber,
+            to: cleanPhone,
+            content: {
+                text: message
+            }
+        };
+    }
 
     try {
         const response = await fetch(url, {
@@ -41,13 +59,13 @@ const sendNotification = async (phone, message, link) => {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('Infobip REST Error Response:', data);
+            console.error('Infobip API Error:', data);
             throw new Error(`Infobip Error: ${data.requestError?.serviceException?.text || 'Unknown Error'}`);
         }
 
         return data;
     } catch (error) {
-        console.error('Error sending WhatsApp message via Infobip:', error);
+        console.error('Error sending WhatsApp message:', error);
         throw error;
     }
 };
