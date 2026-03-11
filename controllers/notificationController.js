@@ -31,14 +31,23 @@ const sendNotificationController = async (req, res) => {
     const { phone, message, link, templateName, templatePlaceholders } = value;
 
     try {
-        // We pass arguments as an object to match the new service signature
-        // If templateName is provided, it will use the template flow.
-        // If not, it uses the raw text flow (which we still support for flexibility).
+        let finalPlaceholders = templatePlaceholders || [];
+
+        // Logic for fully dynamic xpow.io links in templates
+        if (templateName && link && link.startsWith('https://xpow.io/')) {
+            const pathAfterBase = link.replace('https://xpow.io/', '');
+            // Append the path as the 3rd placeholder ({{3}}) for our template
+            // We assume {{1}} is service name, {{2}} is amount, {{3}} is link path
+            if (finalPlaceholders.length < 3) {
+                finalPlaceholders[2] = pathAfterBase;
+            }
+        }
+
         const result = await sendNotification({
             phone,
             message: message ? `${message}\n\n[Check it out](${link})` : undefined,
             templateName,
-            templatePlaceholders
+            templatePlaceholders: finalPlaceholders
         });
 
         const messageId = result.messages?.[0]?.messageId;

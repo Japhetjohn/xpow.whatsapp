@@ -52,4 +52,37 @@ async function sendTestMessage() {
     }
 }
 
+async function sendTemplateMessage(payload) {
+    console.log('⏳ Sending TEMPLATE message via Infobip...');
+    const url = `https://${env.INFOBIP_API_BASE_URL}/whatsapp/1/message/template`;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `App ${env.INFOBIP_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from: env.INFOBIP_SENDER_NUMBER,
+                to: payload.phone.replace('+', ''),
+                content: {
+                    templateName: payload.templateName,
+                    templateData: {
+                        body: { placeholders: payload.templatePlaceholders },
+                        buttons: [{
+                            type: 'URL',
+                            parameter: payload.urlPath || ''
+                        }]
+                    },
+                    language: 'en'
+                }
+            })
+        });
+        const data = await response.json();
+        console.log('📦 Template Response:', JSON.stringify(data, null, 2));
+    } catch (err) {
+        console.error('❌ Template Test Error:', err);
+    }
+}
+
 sendTestMessage();
