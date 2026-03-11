@@ -1,48 +1,53 @@
 /**
- * Sends a WhatsApp notification directly via Twilio REST API using fetch.
- * @param {string} phone - Recipient's phone number (must be E.164 string like +234...)
+ * Sends a WhatsApp notification directly via Infobip REST API.
+ * @param {string} phone - Recipient's phone number (e.g., +234...)
  * @param {string} message - Notification message.
  * @param {string} link - Redirect link.
- * @returns {Promise<object>} - Twilio message response containing the SID.
+ * @returns {Promise<object>} - Infobip message response.
  */
 const sendNotification = async (phone, message, link) => {
-    // Format the message with the markdown link as in our test script
+    // Infobip prefers numbers without the '+' for some reason.
+    // We'll strip the '+' and 'whatsapp:' prefix to be safe.
+    const cleanPhone = phone.replace('+', '').replace('whatsapp:', '');
+
+    // Format the message with the markdown link
     const formattedMessage = `${message}\n\n[Check it out](${link})`;
 
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const fromNumber = process.env.TWILIO_WHATSAPP_NUMBER;
-    // Twilio requires the whatsapp: prefix for WhatsApp messages
-    const toNumber = phone.startsWith('whatsapp:') ? phone : `whatsapp:${phone}`;
+    const apiBaseUrl = process.env.INFOBIP_API_BASE_URL;
+    const apiKey = process.env.INFOBIP_API_KEY;
+    const senderNumber = process.env.INFOBIP_SENDER_NUMBER || '447860099299';
 
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+    const url = `https://${apiBaseUrl}/whatsapp/1/message/text`;
 
-    const params = new URLSearchParams();
-    params.append('To', toNumber);
-    params.append('From', fromNumber);
-    params.append('Body', formattedMessage);
+    const payload = {
+        from: senderNumber,
+        to: cleanPhone,
+        content: {
+            text: formattedMessage
+        }
+    };
 
     try {
-        const response = await fetch(twilioUrl, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Authorization': `Basic ${auth}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Authorization': `App ${apiKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
-            body: params
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('Twilio REST Error Response:', data);
-            throw new Error(`Twilio Error ${data.status}: ${data.message}`);
+            console.error('Infobip REST Error Response:', data);
+            throw new Error(`Infobip Error: ${data.requestError?.serviceException?.text || 'Unknown Error'}`);
         }
 
-        return data; // returns the message payload which includes the sid
+        return data;
     } catch (error) {
-        console.error('Error sending WhatsApp message via native fetch:', error);
+        console.error('Error sending WhatsApp message via Infobip:', error);
         throw error;
     }
 };

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
+// Manually parse .env
 const envPath = path.join(__dirname, '../.env');
 const envFile = fs.readFileSync(envPath, 'utf8');
 const env = {};
@@ -9,45 +10,45 @@ envFile.split('\n').forEach(line => {
     if (match) env[match[1].trim()] = match[2].trim();
 });
 
-const accountSid = env.TWILIO_ACCOUNT_SID;
-const authToken = env.TWILIO_AUTH_TOKEN;
-const fromNumber = env.TWILIO_WHATSAPP_NUMBER;
-const toNumber = 'whatsapp:+2348083895719';
-
-const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+const apiBaseUrl = env.INFOBIP_API_BASE_URL;
+const apiKey = env.INFOBIP_API_KEY;
+const senderNumber = env.INFOBIP_SENDER_NUMBER || '447860099299';
+const toNumber = '2348083895719'; // User's number
 
 async function sendTestMessage() {
-    console.log('⏳ Sending raw REST API request to Twilio...');
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+    console.log('⏳ Sending WhatsApp message via Infobip...');
 
-    const params = new URLSearchParams();
-    params.append('To', toNumber);
-    params.append('From', fromNumber);
-    params.append('Body', 'Hello from your NEW XPOW WhatsApp Bot! 🚀 New credentials verified.');
+    const url = `https://${apiBaseUrl}/whatsapp/1/message/text`;
+
+    const payload = {
+        from: senderNumber,
+        to: toNumber,
+        content: {
+            text: 'Final check from your XPOW Bot! 🚀 Debugging delivery...'
+        }
+    };
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Authorization': `Basic ${auth}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Authorization': `App ${apiKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
-            body: params
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
+        console.log('📦 FULL INFOBIP RESPONSE:', JSON.stringify(data, null, 2));
+
         if (response.ok) {
-            console.log(`✅ Success! Message sent with SID: ${data.sid}`);
+            console.log(`✅ Success status returned.`);
         } else {
-            console.error(`❌ Twilio API Error:`, data);
-            if (data.code === 21608) {
-                console.log('💡 TIP: You might need to join the sandbox for this NEW account first!');
-            }
+            console.error(`❌ Infobip API Error.`);
         }
     } catch (error) {
-        console.error(`❌ Network error while sending message:`, error);
+        console.error(`❌ Network error:`, error);
     }
 }
 
