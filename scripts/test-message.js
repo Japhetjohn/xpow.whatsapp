@@ -18,23 +18,37 @@ const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Mess
 const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
 
 async function sendTestMessage() {
-    console.log('⏳ Sending WhatsApp Interactive Button...');
+    console.log('⏳ Sending raw REST API request to Twilio...');
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
 
-    // The ONLY way to send a URL button in WhatsApp WITHOUT an approved template 
-    // is to use the specific WhatsApp Interactive message JSON object. 
-    // Since we are hitting Twilio's form-urlencoded endpoint, we must serialize 
-    // the 'body' or use the Twilio Content Variables array if configured.
-    // Actually, standard Twilio SMS API does not support raw JSON Interactive objects directly 
-    // in the 'Body' parameter. You MUST use a pre-approved WhatsApp Template to get URL buttons, 
-    // OR use Twilio's Content API.
+    const params = new URLSearchParams();
+    params.append('To', toNumber);
+    params.append('From', fromNumber);
+    params.append('Body', 'Hello from your NEW XPOW WhatsApp Bot! 🚀 New credentials verified.');
 
-    // Let's attempt the Twilio native button formatting (often blocked in Sandbox but worth a try)
-    // We'll use the specific WhatsApp Interactive Message payload format via the Content API
-    // Wait, the standard Twilio REST API for Messages doesn't natively parse raw JSON for buttons without Content API.
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: params
+        });
 
-    console.log('❌ NOTE: URL Buttons (Call-to-Action) CANNOT be sent dynamically as free-form text in WhatsApp, even with code.');
-    console.log('❌ They REQUIRE a pre-approved Meta/WhatsApp Template created in the Twilio Console.');
-    console.log('❌ In the Sandbox, Twilio ONLY allows their 3 pre-built templates, none of which are URL buttons.');
+        const data = await response.json();
+        if (response.ok) {
+            console.log(`✅ Success! Message sent with SID: ${data.sid}`);
+        } else {
+            console.error(`❌ Twilio API Error:`, data);
+            if (data.code === 21608) {
+                console.log('💡 TIP: You might need to join the sandbox for this NEW account first!');
+            }
+        }
+    } catch (error) {
+        console.error(`❌ Network error while sending message:`, error);
+    }
 }
 
 sendTestMessage();
