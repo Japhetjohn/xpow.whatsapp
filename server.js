@@ -47,5 +47,5 @@ app.use((req, res) => {
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
     console.log(`✅ XPOW WhatsApp Bot is running on port ${PORT}`);
-    console.log(`🔗 Endpoint: POST http://localhost:${PORT}/send-notification`);
+    console.log(`🔗 Endpoint: POST /send-notification`);
 });
