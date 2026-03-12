@@ -19,7 +19,7 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
 
     if (templateName) {
         // Template Message Flow
-        url = `https://${apiBaseUrl}/whatsapp/1/message/template`;
+        url = `https://${apiBaseUrl}/whatsapp/1/messages/template`;
         const bodyPlaceholders = templatePlaceholders.slice(0, 2);
         const buttonPlaceholder = templatePlaceholders[2];
 
@@ -48,7 +48,7 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
         };
     } else {
         // Raw Text Message Flow
-        url = `https://${apiBaseUrl}/whatsapp/1/message/text`;
+        url = `https://${apiBaseUrl}/whatsapp/1/messages/text`;
         payload = {
             messages: [{
                 from: senderNumber,
