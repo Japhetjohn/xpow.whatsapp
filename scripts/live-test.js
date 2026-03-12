@@ -18,40 +18,45 @@ async function runLiveTest() {
     console.log(`🚀 Starting Live Production Test...`);
     console.log(`🔗 Endpoint: ${BASE_URL}/send-notification`);
 
-    const payload = {
+    const payloadBooking = {
         phone: TEST_PHONE,
         templateName: 'new_booking_notification',
-        templatePlaceholders: ['Strategy Consultation', '250 USDC'],
-        link: 'https://xpow.io/dashboard/bookings/789'
+        templatePlaceholders: ['Premium Strategy', '500 USDC'],
+        link: 'https://xpow.io/dashboard/bookings/999'
     };
 
-    try {
-        const response = await fetch(`${BASE_URL}/send-notification`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': API_KEY
-            },
-            body: JSON.stringify(payload)
-        });
+    const payloadGeneral = {
+        phone: TEST_PHONE,
+        templateName: 'xpow_notification',
+        templatePlaceholders: ['Japhet', 'Your account has been verified!'],
+        link: 'https://xpow.app/notifications/welcome-123'
+    };
 
-        const result = await response.json();
-
-        if (response.ok) {
-            console.log('✅ PASS: API request successful!');
-            console.log('📦 Server Response:', JSON.stringify(result, null, 2));
-            console.log('\n📱 Check your WhatsApp! You should see a professional button message.');
-        } else {
-            console.error('❌ FAIL: API returned error.');
-            console.error('📦 Error Detail:', JSON.stringify(result, null, 2));
-            if (response.status === 404) {
-                console.log('\n💡 Tip: If you get 404, your DNS might not be live yet. Try changing BASE_URL in this script to your VPS IP.');
+    async function send(payload, label) {
+        console.log(`\n🧪 Testing: ${label}...`);
+        try {
+            const response = await fetch(`${BASE_URL}/send-notification`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': API_KEY
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (response.ok) {
+                console.log(`✅ PASS: ${label} successful!`);
+                console.log('📦 Server Response ID:', result.messageId);
+            } else {
+                console.error(`❌ FAIL: ${label} - ${JSON.stringify(result)}`);
             }
+        } catch (e) {
+            console.error(`❌ ERROR: ${label} - ${e.message}`);
         }
-    } catch (error) {
-        console.error('❌ FAIL: Could not connect to server.');
-        console.error('🛠 Error:', error.message);
     }
+
+    await send(payloadBooking, 'Booking Template');
+    await send(payloadGeneral, 'General Utility Template');
 }
 
 runLiveTest();

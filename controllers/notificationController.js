@@ -33,12 +33,13 @@ const sendNotificationController = async (req, res) => {
     try {
         let finalPlaceholders = templatePlaceholders || [];
 
-        // Logic for fully dynamic xpow.io links in templates
-        if (templateName && link && link.startsWith('https://xpow.io/')) {
-            const pathAfterBase = link.replace('https://xpow.io/', '');
-            // Append the path as the 3rd placeholder ({{3}}) for our template
-            // We assume {{1}} is service name, {{2}} is amount, {{3}} is link path
-            if (finalPlaceholders.length < 3) {
+        // Dynamic link logic for templates (maps to {{3}} or button parameter)
+        if (templateName && link) {
+            let pathAfterBase = '';
+            if (link.includes('xpow.io/')) pathAfterBase = link.split('xpow.io/')[1];
+            else if (link.includes('xpow.app/')) pathAfterBase = link.split('xpow.app/')[1];
+
+            if (pathAfterBase && finalPlaceholders.length < 3) {
                 finalPlaceholders[2] = pathAfterBase;
             }
         }
