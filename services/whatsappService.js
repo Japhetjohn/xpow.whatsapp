@@ -24,39 +24,35 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
         const buttonPlaceholder = templatePlaceholders[2];
 
         payload = {
-            messages: [{
-                from: senderNumber,
-                to: cleanPhone,
-                content: {
-                    templateName: templateName,
-                    templateData: {
-                        body: {
-                            placeholders: bodyPlaceholders
-                        },
-                        ...(buttonPlaceholder && {
-                            buttons: [
-                                {
-                                    type: 'URL',
-                                    parameter: buttonPlaceholder
-                                }
-                            ]
-                        })
+            from: senderNumber,
+            to: cleanPhone,
+            content: {
+                templateName: templateName,
+                templateData: {
+                    body: {
+                        placeholders: bodyPlaceholders
                     },
-                    language: 'en_US'
-                }
-            }]
+                    ...(buttonPlaceholder && {
+                        buttons: [
+                            {
+                                type: 'URL',
+                                parameter: buttonPlaceholder
+                            }
+                        ]
+                    })
+                },
+                language: 'en_US'
+            }
         };
     } else {
         // Raw Text Message Flow
         url = `https://${apiBaseUrl}/whatsapp/1/message/text`;
         payload = {
-            messages: [{
-                from: senderNumber,
-                to: cleanPhone,
-                content: {
-                    text: message
-                }
-            }]
+            from: senderNumber,
+            to: cleanPhone,
+            content: {
+                text: message
+            }
         };
     }
 
