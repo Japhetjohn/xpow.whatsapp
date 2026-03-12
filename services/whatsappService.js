@@ -20,6 +20,9 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
     if (templateName) {
         // Template Message Flow
         url = `https://${apiBaseUrl}/whatsapp/1/message/template`;
+        const bodyPlaceholders = templatePlaceholders.slice(0, 2);
+        const buttonPlaceholder = templatePlaceholders[2];
+
         payload = {
             from: senderNumber,
             to: cleanPhone,
@@ -27,8 +30,16 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
                 templateName: templateName,
                 templateData: {
                     body: {
-                        placeholders: templatePlaceholders
-                    }
+                        placeholders: bodyPlaceholders
+                    },
+                    ...(buttonPlaceholder && {
+                        buttons: [
+                            {
+                                type: 'URL',
+                                parameter: buttonPlaceholder
+                            }
+                        ]
+                    })
                 },
                 language: 'en'
             }
