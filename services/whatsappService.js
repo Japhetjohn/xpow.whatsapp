@@ -76,6 +76,7 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
         });
 
         const data = await response.json();
+        console.log('📥 Infobip Response:', JSON.stringify(data, null, 2));
 
         if (!response.ok) {
             console.error('Infobip API Error:', JSON.stringify(data, null, 2));
