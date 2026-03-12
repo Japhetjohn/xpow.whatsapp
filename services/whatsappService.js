@@ -10,7 +10,8 @@
  * @returns {Promise<object>} - Infobip response.
  */
 const sendNotification = async ({ phone, message, templateName, templatePlaceholders = [] }) => {
-    const cleanPhone = phone.replace('+', '').replace('whatsapp:', '');
+    // Infobip prefers the '+' prefix for international numbers
+    const cleanPhone = phone.startsWith('+') ? phone : `+${phone.replace('whatsapp:', '')}`;
     const apiBaseUrl = process.env.INFOBIP_API_BASE_URL;
     const apiKey = process.env.INFOBIP_API_KEY;
     const senderNumber = process.env.INFOBIP_SENDER_NUMBER;
@@ -24,39 +25,35 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
         const buttonPlaceholder = templatePlaceholders[2];
 
         payload = {
-            messages: [{
-                from: senderNumber,
-                to: cleanPhone,
-                content: {
-                    templateName: templateName,
-                    templateData: {
-                        body: {
-                            placeholders: bodyPlaceholders
-                        },
-                        ...(buttonPlaceholder && {
-                            buttons: [
-                                {
-                                    type: 'URL',
-                                    parameter: buttonPlaceholder
-                                }
-                            ]
-                        })
+            from: senderNumber,
+            to: cleanPhone,
+            content: {
+                templateName: templateName,
+                templateData: {
+                    body: {
+                        placeholders: bodyPlaceholders
                     },
-                    language: 'en'
-                }
-            }]
+                    ...(buttonPlaceholder && {
+                        buttons: [
+                            {
+                                type: 'URL',
+                                parameter: buttonPlaceholder
+                            }
+                        ]
+                    })
+                },
+                language: 'en'
+            }
         };
     } else {
         // Raw Text Message Flow
         url = `https://${apiBaseUrl}/whatsapp/1/message/text`;
         payload = {
-            messages: [{
-                from: senderNumber,
-                to: cleanPhone,
-                content: {
-                    text: message
-                }
-            }]
+            from: senderNumber,
+            to: cleanPhone,
+            content: {
+                text: message
+            }
         };
     }
 
