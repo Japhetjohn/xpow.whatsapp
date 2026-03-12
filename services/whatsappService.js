@@ -56,6 +56,9 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
         };
     }
 
+    console.log(`📤 Sending to Infobip: ${url}`);
+    console.log(`📦 Payload: ${JSON.stringify(payload, null, 2)}`);
+
     try {
         const response = await fetch(url, {
             method: 'POST',

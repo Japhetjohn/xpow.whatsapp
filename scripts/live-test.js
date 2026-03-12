@@ -11,7 +11,7 @@ envFile.split('\n').forEach(line => {
 });
 
 const API_KEY = env.XPOW_SECRET_KEY;
-const BASE_URL = 'https://xpow.io'; // Change to VPS IP if DNS is not yet live
+const BASE_URL = 'http://104.207.70.142:3000'; // Temporary IP for verification
 const TEST_PHONE = '+2348083895719'; // User's phone number
 
 async function runLiveTest() {
