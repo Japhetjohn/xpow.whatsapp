@@ -41,7 +41,7 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
                         ]
                     })
                 },
-                language: 'en'
+                language: 'en_US'
             }
         };
     } else {
@@ -73,8 +73,8 @@ const sendNotification = async ({ phone, message, templateName, templatePlacehol
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('Infobip API Error:', data);
-            throw new Error(`Infobip Error: ${data.requestError?.serviceException?.text || 'Unknown Error'}`);
+            console.error('Infobip API Error:', JSON.stringify(data, null, 2));
+            throw new Error(`Infobip Error: ${JSON.stringify(data.requestError?.serviceException || 'Unknown Error')}`);
         }
 
         return data;
