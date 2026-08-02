@@ -11,6 +11,7 @@ const REQUIRED_ENV = [
     'INFOBIP_API_KEY',
     'INFOBIP_SENDER_NUMBER',
     'XPOW_SECRET_KEY',
+    'META_WEBHOOK_VERIFY_TOKEN'
 ];
 
 const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
