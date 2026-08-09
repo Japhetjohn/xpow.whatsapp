@@ -51,7 +51,7 @@ const sendNotificationController = async (req, res) => {
             templatePlaceholders: finalPlaceholders
         });
 
-        const messageId = result.messages?.[0]?.messageId;
+        const messageId = result.messages?.[0]?.id || result.messages?.[0]?.messageId;
 
         return res.status(200).json({
             status: 'success',

@@ -1,5 +1,5 @@
 /**
- * Sends a WhatsApp notification via Infobip.
+ * Sends a WhatsApp notification via Meta Cloud API.
  * Supports both raw text and predefined templates.
  * 
  * @param {object} params - Notification parameters.
@@ -7,80 +7,84 @@
  * @param {string} [params.message] - Raw text message.
  * @param {string} [params.templateName] - Name of the WhatsApp template.
  * @param {Array} [params.templatePlaceholders] - Values for {{1}}, {{2}}, etc.
- * @returns {Promise<object>} - Infobip response.
+ * @returns {Promise<object>} - Meta response.
  */
 const sendNotification = async ({ phone, message, templateName, templatePlaceholders = [] }) => {
-    // Infobip prefers the '+' prefix for international numbers
-    const cleanPhone = phone.startsWith('+') ? phone : `+${phone.replace('whatsapp:', '')}`;
-    const apiBaseUrl = process.env.INFOBIP_API_BASE_URL;
-    const apiKey = process.env.INFOBIP_API_KEY;
-    const senderNumber = process.env.INFOBIP_SENDER_NUMBER;
-
-    let url, payload;
+    // Meta requires the phone number without the '+' symbol
+    const cleanPhone = phone.replace('+', '').replace('whatsapp:', '');
+    
+    const token = process.env.META_ACCESS_TOKEN;
+    const phoneId = process.env.META_PHONE_NUMBER_ID;
+    
+    const url = `https://graph.facebook.com/v19.0/${phoneId}/messages`;
+    
+    let payload;
 
     if (templateName) {
-        // Template Message Flow
-        url = `https://${apiBaseUrl}/whatsapp/1/message/template`;
+        // Meta Template Message Flow
         const bodyPlaceholders = templatePlaceholders.slice(0, 2);
-        const buttonPlaceholder = templatePlaceholders[2];
+        const buttonPlaceholder = templatePlaceholders[2]; // if exists
+        
+        let components = [];
+        
+        if (bodyPlaceholders.length > 0) {
+            components.push({
+                type: "body",
+                parameters: bodyPlaceholders.map(val => ({ type: "text", text: val }))
+            });
+        }
+        
+        if (buttonPlaceholder) {
+            components.push({
+                type: "button",
+                sub_type: "url",
+                index: "0",
+                parameters: [
+                    { type: "text", text: buttonPlaceholder }
+                ]
+            });
+        }
 
         payload = {
-            messages: [{
-                from: senderNumber,
-                to: cleanPhone,
-                content: {
-                    templateName: templateName,
-                    templateData: {
-                        body: {
-                            placeholders: bodyPlaceholders
-                        },
-                        ...(buttonPlaceholder && {
-                            buttons: [
-                                {
-                                    type: 'URL',
-                                    parameter: buttonPlaceholder
-                                }
-                            ]
-                        })
-                    },
-                    language: 'en'
-                }
-            }]
+            messaging_product: "whatsapp",
+            to: cleanPhone,
+            type: "template",
+            template: {
+                name: templateName,
+                language: { code: "en" },
+                components: components.length > 0 ? components : undefined
+            }
         };
     } else {
-        // Raw Text Message Flow
-        url = `https://${apiBaseUrl}/whatsapp/1/message/text`;
+        // Raw Text Message Flow (Requires active 24h conversation window)
         payload = {
-            messages: [{
-                from: senderNumber,
-                to: cleanPhone,
-                content: {
-                    text: message
-                }
-            }]
+            messaging_product: "whatsapp",
+            to: cleanPhone,
+            type: "text",
+            text: {
+                body: message
+            }
         };
     }
 
-    console.log(`📤 Sending to Infobip: ${url}`);
-    console.log(`📦 Payload: ${JSON.stringify(payload, null, 2)}`);
-
+    console.log(`📤 Sending to Meta API: ${url}`);
+    
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Authorization': `App ${apiKey}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
         });
 
         const data = await response.json();
-        console.log('📥 Infobip Response:', JSON.stringify(data, null, 2));
+        console.log('📥 Meta API Response:', JSON.stringify(data, null, 2));
 
         if (!response.ok) {
-            console.error('Infobip API Error:', JSON.stringify(data, null, 2));
-            throw new Error(`Infobip Error: ${JSON.stringify(data.requestError?.serviceException || 'Unknown Error')}`);
+            console.error('Meta API Error:', JSON.stringify(data, null, 2));
+            throw new Error(`Meta Error: ${data.error?.message || 'Unknown Error'}`);
         }
 
         return data;
