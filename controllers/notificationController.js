@@ -13,9 +13,7 @@ const sendNotificationController = async (req, res) => {
             .messages({
                 'string.pattern.base': 'Phone number must be in E.164 format (e.g., +2348012345678)',
             }),
-        message: Joi.string().min(1).optional(),
-        link: Joi.string().uri().optional(),
-        templateName: Joi.string().optional(),
+        templateName: Joi.string().required(),
         templatePlaceholders: Joi.array().items(Joi.string()).optional(),
     });
 
@@ -28,34 +26,20 @@ const sendNotificationController = async (req, res) => {
         });
     }
 
-    const { phone, message, link, templateName, templatePlaceholders } = value;
+    const { phone, templateName, templatePlaceholders } = value;
 
     try {
-        let finalPlaceholders = templatePlaceholders || [];
-
-        // Dynamic link logic for templates (maps to {{3}} or button parameter)
-        if (templateName && link) {
-            let pathAfterBase = '';
-            if (link.includes('xpow.io/')) pathAfterBase = link.split('xpow.io/')[1];
-            else if (link.includes('xpow.app/')) pathAfterBase = link.split('xpow.app/')[1];
-
-            if (pathAfterBase && finalPlaceholders.length < 3) {
-                finalPlaceholders[2] = pathAfterBase;
-            }
-        }
-
         const result = await sendNotification({
             phone,
-            message: message ? `${message}\n\n[Check it out](${link})` : undefined,
             templateName,
-            templatePlaceholders: finalPlaceholders
+            templatePlaceholders: templatePlaceholders || []
         });
 
         const messageId = result.messages?.[0]?.id || result.messages?.[0]?.messageId;
 
         return res.status(200).json({
             status: 'success',
-            message: 'WhatsApp notification queued',
+            message: 'WhatsApp notification sent efficiently',
             messageId: messageId,
         });
     } catch (error) {
