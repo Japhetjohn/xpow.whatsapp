@@ -7,10 +7,10 @@ const morgan = require('morgan');
 
 // ─── Startup Guard ────────────────────────────────────────────────────────────
 const REQUIRED_ENV = [
-    'INFOBIP_API_BASE_URL',
-    'INFOBIP_API_KEY',
-    'INFOBIP_SENDER_NUMBER',
-    'XPOW_SECRET_KEY',
+    'META_PHONE_NUMBER_ID',
+    'META_APP_ID',
+    'META_ACCESS_TOKEN',
+    'META_APP_SECRET',
     'META_WEBHOOK_VERIFY_TOKEN'
 ];
 
