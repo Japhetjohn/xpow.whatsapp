@@ -26,7 +26,7 @@ const sendNotification = async ({ phone, message, templateName = "xpow_utility_n
         template: {
             name: templateName,
             language: {
-                code: "en_US"
+                code: "en"
             },
             components: [
                 {

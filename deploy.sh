@@ -13,13 +13,13 @@ echo "📦 Packaging files..."
 # Construct target list based on existing files
 TARGETS="controllers middleware routes scripts services public package.json ecosystem.config.js server.js .env"
 
-tar --exclude="*.map" -czf $ZIP_FILE $TARGETS || true
+tar --exclude="*.map" -czf $ZIP_FILE controllers middleware routes scripts services package.json ecosystem.config.js server.js .env || true
 
 echo "📤 Transferring package to VPS..."
-$HOME/.local/bin/sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no $ZIP_FILE "$VPS_USER@$VPS_IP:/root/"
+sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no $ZIP_FILE "$VPS_USER@$VPS_IP:/root/"
 
 echo "⚙️ Setting up on VPS..."
-SSHPASS="$VPS_PASS" $HOME/.local/bin/sshpass -e ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_IP" << EOF
+SSHPASS="$VPS_PASS" sshpass -e ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_IP" << EOF
     mkdir -p $REMOTE_PATH
     mv /root/$ZIP_FILE $REMOTE_PATH/
     cd $REMOTE_PATH
