@@ -2,19 +2,19 @@ const Joi = require('joi');
 const { sendNotification } = require('../services/whatsappService');
 
 /**
- * Controller to handle sending WhatsApp notifications.
+ * Controller to handle sending WhatsApp template notifications.
  */
 const sendNotificationController = async (req, res) => {
     // Validation schema
     const schema = Joi.object({
         phone: Joi.string()
-            .pattern(/^\+[1-9]\d{1,14}$/) // E.164 format
+            .pattern(/^\+[1-9]\d{1,14}$/)
             .required()
             .messages({
                 'string.pattern.base': 'Phone number must be in E.164 format (e.g., +2348012345678)',
             }),
-        templateName: Joi.string().required(),
-        templatePlaceholders: Joi.array().items(Joi.string()).optional(),
+        message: Joi.string().required(),
+        templateName: Joi.string().optional().default("xpow_utility_notification"),
     });
 
     const { error, value } = schema.validate(req.body);
@@ -26,20 +26,20 @@ const sendNotificationController = async (req, res) => {
         });
     }
 
-    const { phone, templateName, templatePlaceholders } = value;
+    const { phone, message, templateName } = value;
 
     try {
         const result = await sendNotification({
             phone,
-            templateName,
-            templatePlaceholders: templatePlaceholders || []
+            message,
+            templateName
         });
 
         const messageId = result.messages?.[0]?.id || result.messages?.[0]?.messageId;
 
         return res.status(200).json({
             status: 'success',
-            message: 'WhatsApp notification sent efficiently',
+            message: 'WhatsApp template notification sent successfully',
             messageId: messageId,
         });
     } catch (error) {
