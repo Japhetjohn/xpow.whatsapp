@@ -1,155 +1,104 @@
-# XPOW WhatsApp Notification Bot
+# XPOW WhatsApp Notification Service
 
-A lightweight, stateless Node.js microservice that sends WhatsApp notifications for the XPOW platform via Twilio.
-
----
-
-## How It Works
-
-```
-XPOW Backend  →  POST /send-notification  →  This Bot  →  Twilio  →  User's WhatsApp
-```
-
-The XPOW backend is responsible for storing user phone numbers and deciding when to notify. This bot simply receives the request and delivers the message.
+A lightweight, stateless Node.js middleware microservice designed to bridge your backend application with the **Meta WhatsApp Cloud API**. It provides a simple, secure REST endpoint to trigger dynamic WhatsApp Template notifications and manages incoming webhook validations from Meta.
 
 ---
 
-## Endpoint
+## 🚀 Architecture Flow
 
-### `POST /send-notification`
+This service acts as a "middleman" between your core application (e.g., the XPOW web server) and Meta's official WhatsApp servers:
 
-**Headers:**
-```
-x-api-key: YOUR_API_KEY
-Content-Type: application/json
-```
-
-**Body:**
-```json
-{
-  "phone": "+2348012345678",
-  "message": "You just earned 20 XP",
-  "link": "https://xpow.io/rewards"
-}
-```
-
-**Response (success):**
-```json
-{
-  "status": "sent",
-  "sid": "SMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-}
-```
-
-**Response (error):**
-```json
-{
-  "status": "error",
-  "message": "Phone number must be in E.164 format (e.g., +2348012345678)"
-}
-```
-
-**Message format delivered to user:**
-```
-🚀 XPOW Notification
-
-You just earned 20 XP
-
-Open App:
-https://xpow.io/rewards
-```
+1. **Trigger Phase:** Your core web backend sends a standard HTTP POST request to this microservice whenever an event happens (e.g., "Project payment received", "New user registered").
+2. **Dispatch Phase:** This Node.js service validates the request, injects your custom message dynamically into the officially approved Meta Template (`xpow_utility_notification`), and securely pushes it directly to the Meta Graph API.
+3. **Delivery:** Meta receives the verified template structure and immediately delivers the customized push notification to the user's WhatsApp client!
 
 ---
 
-## Setup
+## 📋 Prerequisites & Setup
 
-### 1. Clone the repo
-```bash
-git clone https://github.com/Japhetjohn/xpow.whatsapp.git
-cd xpow.whatsapp
-```
+### Environment Variables (`.env`)
+Create a `.env` file in the root directory. This contains all your Meta API credentials and the secure access key you'll use to protect this microservice.
 
-### 2. Install dependencies
-```bash
-npm install
-```
-
-### 3. Configure environment variables
-```bash
-cp .env.example .env
-```
-
-Fill in `.env`:
 ```env
-TWILIO_ACCOUNT_SID=your_twilio_account_sid
-TWILIO_AUTH_TOKEN=your_twilio_auth_token
-TWILIO_WHATSAPP_NUMBER=+14155238886
-XPOW_SECRET_KEY=your_generated_api_key
-PORT=3000
-```
+# Server Port
+PORT=3010
 
-### 4. Generate your API key
-```bash
-node scripts/generate-key.js
-```
-Copy the output into your `.env` as `XPOW_SECRET_KEY`, and share the same key with the XPOW dev team.
+# Meta WhatsApp Cloud API Credentials
+META_ACCESS_TOKEN=EAAP... (System User Permanent Token)
+META_PHONE_NUMBER_ID=1175757382297130
+META_APP_ID=1059935686607620
+META_APP_SECRET=bbbe81ff04a735329f1e1f4efe2ae7ab
 
-### 5. Run the service
-```bash
-# Production
-npm start
+# Your Internal Security Key (Required in Headers to trigger notifications)
+XPOW_SECRET_KEY=generate_a_strong_secret_key
 
-# Development (auto-restarts on file changes)
-npm run dev
+# Webhook Verification Token (For Meta Dashboard configuration)
+META_WEBHOOK_VERIFY_TOKEN=xpow_secure_webhook_token_2026
 ```
 
 ---
 
-## Health Check
+## 🔌 API Endpoints
 
-```bash
-GET /health
+### 1. Send Notification (Trigger Endpoint)
+Hit this endpoint from your XPOW server to send a message to a user.
+
+**URL:** `POST /whatsapp/send-notification`  
+*(If using the live domain: `https://your-domain.com/whatsapp/send-notification`)*
+
+**Headers Required:**
+```text
+Content-Type: application/json
+x-api-key: <YOUR_XPOW_SECRET_KEY>
 ```
 
-Returns:
+**JSON Payload:**
 ```json
-{ "status": "ok", "service": "xpow-whatsapp-bot" }
+{
+  "phone": "+2348083895719",
+  "message": "Project payment received! 💰"
+}
+```
+
+**Success Response (HTTP 200 OK):**
+```json
+{
+  "status": "success",
+  "message": "WhatsApp template notification sent successfully",
+  "messageId": "wamid.HBgNM..."
+}
 ```
 
 ---
 
-## Project Structure
+### 2. Meta Webhooks
 
-```
-xpow-whatsapp-bot/
-├── config/
-│   └── twilio.js                # Twilio client setup
-├── controllers/
-│   └── notificationController.js # Request handling & Joi validation
-├── middleware/
-│   └── auth.js                  # API key authentication
-├── routes/
-│   └── notificationRoutes.js    # Route definitions
-├── scripts/
-│   └── generate-key.js          # API key generator
-├── services/
-│   └── whatsappService.js       # Message formatting & Twilio API
-├── .env.example
-├── server.js
-└── package.json
-```
+To receive live delivery receipts (e.g., when the message is `read` or `delivered` to the user's phone), Meta requires connecting a Webhook.
+
+**Webhook Callback URL:** `https://your-domain.com/whatsapp/webhook`
+**Verify Token:** `xpow_secure_webhook_token_2026`
+
+* **`GET /whatsapp/webhook`**: Used strictly by Meta to verify and handshake the callback URL.
+* **`POST /whatsapp/webhook`**: Used by Meta to stream event payloads (delivery receipts, inbound messages).
 
 ---
 
-## Phone Number Format
+## 🏗️ Deployment (PM2)
 
-Phone numbers **must** be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164):
-- ✅ `+2348012345678`
-- ❌ `08012345678`
-- ❌ `2348012345678`
+This service is optimized to stay online permanently using PM2.
 
----
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the service in production mode:
+   ```bash
+   pm2 start ecosystem.config.js --env production
+   ```
+3. Save the PM2 state to resurrect automatically on reboots:
+   ```bash
+   pm2 save
+   pm2 startup
+   ```
 
-## Security
-
-All requests must include the API key in the `x-api-key` header. Requests without a valid key will receive a `401 Unauthorized` response.
+*To deploy code updates seamlessly without downtime, run the provided `bash deploy.sh` script!*
